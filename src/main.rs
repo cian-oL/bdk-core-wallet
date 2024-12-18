@@ -21,6 +21,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let core_rpc = Client::new("http://127.0.0.1:18443/wallet/test".to_string(), rpc_auth)?;
     println!("{:#?}", core_rpc.get_blockchain_info()?);
 
+    // create test wallet and coins (coinbase maturity needs 100 blocks)
+    core_rpc.create_wallet("test", None, None, None, None)?;
+    let core_address = core_rpc.get_new_address(None, None)?;
+    core_rpc.generate_to_address(101, &core_address)?; // 101 blocks for > maturity
+    let core_balance = core_rpc.get_balance(None, None)?;
+
+    println!("core balance: {:#?}", core_balance);
     Ok(())
 }
 
