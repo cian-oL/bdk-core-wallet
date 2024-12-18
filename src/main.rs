@@ -15,8 +15,13 @@ use bdk::wallet::{signer::SignOptions, AddressIndex};
 use bdk::Wallet;
 use std::str::FromStr;
 
-fn main() {
-    println!("Hello, world!");
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // create rpc interface
+    let rpc_auth = rpc_auth::UserPass("admin".to_string(), "password".to_string());
+    let core_rpc = Client::new("http://127.0.0.1:18443/wallet/test".to_string(), rpc_auth)?;
+    println!("{:#?}", core_rpc.get_blockchain_info()?);
+
+    Ok(())
 }
 
 /// generates and returns a (receiver, change) pair of descriptors
