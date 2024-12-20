@@ -76,6 +76,33 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     wallet.sync(NoopProgress, None)?;
     let address = wallet.get_address(AddressIndex::New)?.address;
 
+    // Send 10 BTC from Core to BDK and confirm txn by block generation
+    core_rpc.send_to_address(&address, Amount::from_btc(10.0)?, None, None, None, None, None, None)?;
+    core_rpc.generate_to_address(1, &core_address)?;
+    wallet.sync(NoopProgress, None)?;
+    
+    // Create a txn builder and extract PSBT
+    let mut tx_builder = wallet.build_tx();
+    tx_builder.set_recipients(vec!((core_address.script_pubkey(), 500000000)));
+    let (mut psbt, _) = tx_builder.finish()?;
+
+    //  // Sign the above psbt with signing option
+    let sign_opt = SignOptions {
+        assume_height: None,
+        ..Default::default()
+    };
+    wallet.sign(&mut psbt, sign_opt)?;
+
+    // Extract final txn and broadcast
+    let tx = psbt.extract_tx();
+    wallet.broadcast(tx)?;
+    core_rpc.generate_to_address(1, &core_address)?;
+    wallet.sync(NoopProgress, None)?;
+
+    // Fetch and display wallet balances
+    let core_balance = core_rpc.get_balance(None, None)?;
+    let bdk_balance = Amount::from_sat(wallet.get_balance()?;
+
     println!("core balance: {:#?}", core_balance);
     println!("bdk address: {:#?}", address);
     Ok(())
